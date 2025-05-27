@@ -1,0 +1,200 @@
+{
+  "name": "Claude AI Automation Builder",
+  "version": "1.0.0",
+  "description": "AI-powered automation builder that creates Monday.com workflows using natural language. Simply describe what you want to automate, and Claude AI will build it for you.",
+  "short_description": "Build Monday.com automations with natural language using Claude AI",
+  "icon": "https://your-app-domain.com/assets/icon.png",
+  "screenshots": [
+    "https://your-app-domain.com/assets/screenshot1.png",
+    "https://your-app-domain.com/assets/screenshot2.png",
+    "https://your-app-domain.com/assets/screenshot3.png"
+  ],
+  "categories": ["automation", "ai", "productivity"],
+  "tags": ["ai", "automation", "claude", "nlp", "workflow", "productivity"],
+  "author": {
+    "name": "Your Company Name",
+    "email": "support@your-domain.com",
+    "website": "https://your-domain.com"
+  },
+  "support": {
+    "email": "support@your-domain.com",
+    "documentation": "https://your-domain.com/docs",
+    "privacy_policy": "https://your-domain.com/privacy",
+    "terms_of_service": "https://your-domain.com/terms"
+  },
+  "app_version_id": "V1",
+  "app_id": 10416253,
+  "client_id": "1aa883bd722bc9c070f3aed86160751a",
+  "base_url": "https://your-app-domain.com",
+  "health_check_url": "https://your-app-domain.com/health",
+  "oauth": {
+    "redirect_uri": "https://your-app-domain.com/auth/monday/callback",
+    "scopes": [
+      "boards:read",
+      "boards:write", 
+      "workspaces:read",
+      "workspaces:write",
+      "users:read",
+      "account:read",
+      "updates:read",
+      "updates:write",
+      "assets:read",
+      "tags:read",
+      "teams:read",
+      "notifications:write",
+      "webhooks:write"
+    ]
+  },
+  "features": [
+    {
+      "type": "AppFeature",
+      "name": "AI Automation Builder",
+      "description": "Create complex automations using natural language descriptions",
+      "icon": "https://your-app-domain.com/assets/automation-icon.png"
+    },
+    {
+      "type": "AppFeature", 
+      "name": "Smart Workflow Analysis",
+      "description": "AI analyzes your boards and suggests optimal automation workflows",
+      "icon": "https://your-app-domain.com/assets/analysis-icon.png"
+    },
+    {
+      "type": "AppFeature",
+      "name": "Natural Language Processing",
+      "description": "Describe automations in plain English and watch them come to life",
+      "icon": "https://your-app-domain.com/assets/nlp-icon.png"
+    }
+  ],
+  "recipes": [
+    {
+      "name": "AI Automation Builder",
+      "description": "Create automations using natural language with Claude AI",
+      "trigger": {
+        "type": "incoming_notification",
+        "name": "When automation is requested"
+      },
+      "action": {
+        "type": "remote_action",
+        "name": "Build AI Automation",
+        "url": "https://your-app-domain.com/monday/execute_action",
+        "input_fields": [
+          {
+            "id": "user_input",
+            "title": "Describe your automation",
+            "description": "Tell Claude what automation you want to create in plain English",
+            "type": "long_text",
+            "required": true,
+            "placeholder": "Example: When a task is marked as complete, notify the team and create a follow-up task"
+          },
+          {
+            "id": "target_board",
+            "title": "Target Board",
+            "description": "Select the board where this automation should be applied",
+            "type": "board_relation",
+            "required": false
+          },
+          {
+            "id": "automation_type",
+            "title": "Automation Type",
+            "description": "What type of automation do you want to create?",
+            "type": "dropdown",
+            "required": false,
+            "remote_options": {
+              "url": "https://your-app-domain.com/monday/get_remote_list_options"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Smart Task Analysis",
+      "description": "Analyze tasks and items using Claude AI for insights and recommendations",
+      "trigger": {
+        "type": "incoming_notification",
+        "name": "When analysis is requested"
+      },
+      "action": {
+        "type": "remote_action",
+        "name": "Analyze with AI",
+        "url": "https://your-app-domain.com/monday/execute_action",
+        "input_fields": [
+          {
+            "id": "analysis_prompt",
+            "title": "Analysis Request",
+            "description": "What would you like Claude to analyze about this item?",
+            "type": "long_text",
+            "required": true,
+            "placeholder": "Example: Analyze the risk level of this project and suggest mitigation strategies"
+          },
+          {
+            "id": "include_context",
+            "title": "Include Board Context",
+            "description": "Should Claude consider the entire board context in the analysis?",
+            "type": "checkbox",
+            "required": false
+          }
+        ]
+      }
+    }
+  ],
+  "widgets": [
+    {
+      "name": "AI Automation Dashboard",
+      "description": "Monitor and manage your AI-created automations",
+      "type": "board_view",
+      "url": "https://your-app-domain.com/widgets/dashboard",
+      "settings": [
+        {
+          "id": "show_metrics",
+          "title": "Show Performance Metrics",
+          "type": "checkbox",
+          "default": true
+        }
+      ]
+    }
+  ],
+  "webhooks": [
+    {
+      "event": "create_item",
+      "url": "https://your-app-domain.com/webhooks/monday"
+    },
+    {
+      "event": "change_column_value", 
+      "url": "https://your-app-domain.com/webhooks/monday"
+    },
+    {
+      "event": "create_update",
+      "url": "https://your-app-domain.com/webhooks/monday"
+    }
+  ],
+  "security": {
+    "rate_limits": {
+      "requests_per_minute": 100,
+      "requests_per_hour": 1000
+    },
+    "error_rate_threshold": 0.05,
+    "response_time_threshold": 2000,
+    "uptime_sla": 0.999
+  },
+  "compliance": {
+    "gdpr_compliant": true,
+    "data_retention_days": 90,
+    "encryption_at_rest": true,
+    "encryption_in_transit": true,
+    "audit_logging": true
+  },
+  "technical": {
+    "runtime": "node",
+    "version": "18.x",
+    "memory_limit": "512MB",
+    "timeout": 30,
+    "environment_variables": [
+      "MONDAY_CLIENT_ID",
+      "MONDAY_CLIENT_SECRET", 
+      "MONDAY_SIGNING_SECRET",
+      "ANTHROPIC_API_KEY",
+      "JWT_SECRET",
+      "DATABASE_URL"
+    ]
+  }
+}

@@ -1,0 +1,44 @@
+[build]
+builder = "nixpacks"
+buildCommand = "npm ci && cd client && npm ci && npm run build"
+
+[deploy]
+startCommand = "node server/index.js"
+healthcheckPath = "/health"
+healthcheckTimeout = 100
+restartPolicyType = "never"
+
+[env]
+NODE_ENV = "production"
+PORT = "8080"
+
+# Monday.com Configuration
+MONDAY_CLIENT_ID = "${{MONDAY_CLIENT_ID}}"
+MONDAY_CLIENT_SECRET = "${{MONDAY_CLIENT_SECRET}}"
+MONDAY_SIGNING_SECRET = "${{MONDAY_SIGNING_SECRET}}"
+MONDAY_API_URL = "https://api.monday.com/v2"
+
+# Claude API Configuration
+CLAUDE_API_KEY = "${{CLAUDE_API_KEY}}"
+CLAUDE_API_URL = "https://api.anthropic.com"
+
+# Application Configuration
+APP_URL = "${{RAILWAY_STATIC_URL}}"
+SESSION_SECRET = "${{SESSION_SECRET}}"
+JWT_SECRET = "${{JWT_SECRET}}"
+
+# Database (if using)
+DATABASE_URL = "${{DATABASE_URL}}"
+REDIS_URL = "${{REDIS_URL}}"
+
+# Security
+CORS_ORIGIN = "https://monday.com,https://*.monday.com"
+RATE_LIMIT_MAX = "100"
+RATE_LIMIT_WINDOW = "900000"
+
+# Monitoring
+LOG_LEVEL = "info"
+ENABLE_METRICS = "true"
+
+[networking]
+serviceName = "claude-monday-app"

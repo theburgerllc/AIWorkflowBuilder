@@ -1,0 +1,272 @@
+{
+  "name": "Claude AI Automation Builder",
+  "short_description": "Create powerful Monday.com automations using natural language with Claude AI",
+  "long_description": "Transform your workflow automation with Claude AI Automation Builder. Simply describe what you want to automate in plain English, and our AI will create sophisticated Monday.com automations for you. Perfect for teams who want powerful automation without technical complexity. Features include intelligent automation suggestions, natural language processing, and seamless integration with all Monday.com features.",
+  "version": "1.0.0",
+  "developer": {
+    "name": "Claude AI Automation Solutions",
+    "email": "support@claude-automation.com",
+    "website": "https://claude-automation.com"
+  },
+  "app_id": "claude-automation-builder",
+  "client_id": "${MONDAY_CLIENT_ID}",
+  "client_secret": "${MONDAY_CLIENT_SECRET}",
+  "signing_secret": "${MONDAY_SIGNING_SECRET}",
+  "redirect_uri": "${APP_BASE_URL}/auth/monday/callback",
+  "base_url": "${APP_BASE_URL}",
+  "scopes": [
+    "me:read",
+    "boards:read",
+    "boards:write",
+    "workspaces:read",
+    "workspaces:write",
+    "users:read",
+    "teams:read",
+    "updates:read",
+    "updates:write",
+    "tags:read",
+    "notifications:write",
+    "account:read"
+  ],
+  "features": [
+    {
+      "type": "ItemView",
+      "name": "Claude Automation Assistant",
+      "url": "/features/item-view",
+      "icon": "https://cdn.monday.com/icons/ai-assistant.svg",
+      "description": "Create automations for this item using natural language"
+    },
+    {
+      "type": "BoardView", 
+      "name": "Claude Board Automations",
+      "url": "/features/board-view",
+      "icon": "https://cdn.monday.com/icons/automation.svg",
+      "description": "Set up board-wide automations with AI assistance"
+    },
+    {
+      "type": "DashboardWidget",
+      "name": "Automation Insights",
+      "url": "/features/dashboard-widget", 
+      "icon": "https://cdn.monday.com/icons/analytics.svg",
+      "description": "View and manage your AI-created automations"
+    },
+    {
+      "type": "IntegrationFeature",
+      "name": "Claude AI Trigger",
+      "url": "/integrations/triggers/claude-ai",
+      "icon": "https://cdn.monday.com/icons/trigger.svg",
+      "description": "Trigger automations based on AI analysis"
+    },
+    {
+      "type": "IntegrationFeature", 
+      "name": "Claude AI Action",
+      "url": "/integrations/actions/claude-ai",
+      "icon": "https://cdn.monday.com/icons/action.svg",
+      "description": "Execute AI-powered actions in automations"
+    },
+    {
+      "type": "WorkflowBlock",
+      "name": "AI Analysis Block",
+      "url": "/workflows/blocks/ai-analysis",
+      "icon": "https://cdn.monday.com/icons/ai.svg",
+      "description": "Analyze data and make decisions using Claude AI"
+    }
+  ],
+  "webhooks": [
+    {
+      "event": "create_item",
+      "url": "/webhooks/monday/item-created"
+    },
+    {
+      "event": "change_column_value", 
+      "url": "/webhooks/monday/column-changed"
+    },
+    {
+      "event": "create_update",
+      "url": "/webhooks/monday/update-created"
+    },
+    {
+      "event": "app_subscription_created",
+      "url": "/webhooks/monday/subscription-created"
+    },
+    {
+      "event": "app_subscription_cancelled",
+      "url": "/webhooks/monday/subscription-cancelled"
+    },
+    {
+      "event": "app_subscription_renewed",
+      "url": "/webhooks/monday/subscription-renewed"
+    }
+  ],
+  "permissions": {
+    "read": [
+      "boards",
+      "items", 
+      "columns",
+      "groups",
+      "users",
+      "workspaces",
+      "teams",
+      "updates",
+      "tags",
+      "account"
+    ],
+    "write": [
+      "boards",
+      "items",
+      "columns", 
+      "groups",
+      "updates",
+      "notifications"
+    ]
+  },
+  "authentication": {
+    "type": "oauth2",
+    "authorization_url": "https://auth.monday.com/oauth2/authorize",
+    "token_url": "https://auth.monday.com/oauth2/token",
+    "refresh_url": "https://auth.monday.com/oauth2/token"
+  },
+  "endpoints": {
+    "health": "/health",
+    "auth_callback": "/auth/monday/callback",
+    "remote_options": "/api/monday/remote-options",
+    "execute_action": "/api/monday/execute-action",
+    "validate_secret": "/api/monday/validate-secret"
+  },
+  "settings": {
+    "supports_multi_account": true,
+    "supports_trial": true,
+    "trial_period_days": 14,
+    "requires_billing": true,
+    "supports_webhooks": true,
+    "supports_remote_options": true,
+    "supports_custom_fields": true
+  },
+  "monetization": {
+    "pricing_model": "subscription",
+    "plans": [
+      {
+        "id": "starter",
+        "name": "Starter",
+        "price_monthly": 9.99,
+        "price_yearly": 99.99,
+        "features": [
+          "Up to 50 AI automation requests per month",
+          "Basic automation templates",
+          "Email support"
+        ]
+      },
+      {
+        "id": "professional", 
+        "name": "Professional",
+        "price_monthly": 29.99,
+        "price_yearly": 299.99,
+        "features": [
+          "Up to 500 AI automation requests per month",
+          "Advanced automation templates",
+          "Custom automation creation",
+          "Priority support",
+          "Analytics dashboard"
+        ]
+      },
+      {
+        "id": "enterprise",
+        "name": "Enterprise", 
+        "price_monthly": 99.99,
+        "price_yearly": 999.99,
+        "features": [
+          "Unlimited AI automation requests",
+          "Custom integrations",
+          "Dedicated support",
+          "Advanced analytics",
+          "Custom AI training",
+          "SLA guarantee"
+        ]
+      }
+    ]
+  },
+  "integrations": {
+    "supports_zapier": false,
+    "supports_integromat": false,
+    "custom_integrations": [
+      {
+        "name": "Claude AI API",
+        "description": "Direct integration with Anthropic's Claude AI",
+        "required": true
+      }
+    ]
+  },
+  "compliance": {
+    "gdpr_compliant": true,
+    "hipaa_compliant": false,
+    "soc2_compliant": true,
+    "data_residency": ["US", "EU"],
+    "encryption": "AES-256",
+    "audit_logging": true
+  },
+  "technical": {
+    "runtime": "node.js",
+    "min_node_version": "18.0.0",
+    "database": "postgresql",
+    "caching": "redis",
+    "hosting": "docker",
+    "cdn": true,
+    "ssl_required": true
+  },
+  "monitoring": {
+    "health_check_interval": 60,
+    "max_response_time": 5000,
+    "error_threshold": 0.05,
+    "uptime_sla": 99.9
+  },
+  "security": {
+    "rate_limiting": {
+      "requests_per_minute": 100,
+      "requests_per_hour": 1000,
+      "requests_per_day": 10000
+    },
+    "ip_whitelist": [],
+    "cors_origins": [
+      "https://*.monday.com",
+      "https://auth.monday.com"
+    ],
+    "content_security_policy": {
+      "default-src": "'self'",
+      "script-src": "'self' 'unsafe-inline' https://cdn.monday.com",
+      "style-src": "'self' 'unsafe-inline' https://cdn.monday.com",
+      "img-src": "'self' data: https:",
+      "connect-src": "'self' https://api.monday.com https://api.anthropic.com"
+    }
+  },
+  "localization": {
+    "supported_languages": ["en", "es", "fr", "de", "pt", "ja"],
+    "default_language": "en"
+  },
+  "categories": [
+    "Productivity",
+    "Automation", 
+    "AI",
+    "Workflow"
+  ],
+  "keywords": [
+    "automation",
+    "ai",
+    "claude", 
+    "artificial intelligence",
+    "workflow",
+    "productivity",
+    "natural language",
+    "smart automation",
+    "monday.com"
+  ],
+  "support": {
+    "documentation_url": "https://docs.claude-automation.com",
+    "support_email": "support@claude-automation.com",
+    "support_url": "https://support.claude-automation.com",
+    "community_url": "https://community.claude-automation.com"
+  },
+  "legal": {
+    "privacy_policy_url": "https://claude-automation.com/privacy",
+    "terms_of_service_url": "https://claude-automation.com/terms",
+    "cookie_policy_url": "https://claude-automation.com/cookies"
+  }
