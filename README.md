@@ -217,6 +217,20 @@ This application meets institutional-grade production standards:
 - Update documentation as needed
 - Follow security best practices
 
+### GitHub Secrets Setup
+For the CI/CD pipeline to work properly, configure these secrets in your GitHub repository:
+
+```
+RAILWAY_TOKEN          # Railway deployment token (optional)
+PRODUCTION_URL         # Production app URL (optional, defaults to Railway URL)
+```
+
+To set up secrets:
+1. Go to your GitHub repository
+2. Navigate to Settings → Secrets and variables → Actions
+3. Click "New repository secret"
+4. Add the required secrets
+
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
