@@ -4,16 +4,13 @@ const router = express.Router();
 const { Logger } = require('@mondaycom/apps-sdk');
 
 // Import middleware
-const AIMiddleware = require('../middleware/ai');
+const aiMiddleware = require('../middleware/ai');
 const { requireMondayAuth } = require('../middleware/auth');
 
 // Import services
 const OperationExecutor = require('../services/operation-executor');
 const ValidationService = require('../services/validation');
-const { logger } = require('../utils/logger');
-
-// Initialize middleware and services
-const aiMiddleware = new AIMiddleware();
+const logger = require('../utils/logger');
 const operationExecutor = new OperationExecutor();
 const validationService = new ValidationService();
 
@@ -30,7 +27,7 @@ router.use(aiMiddleware.performanceMonitor());
 router.post('/execute', requireMondayAuth, async (req, res) => {
   try {
     const { operation, context } = req.body;
-    
+
     if (!operation) {
       return res.status(400).json({
         error: 'Operation is required',
@@ -85,7 +82,7 @@ router.post('/execute', requireMondayAuth, async (req, res) => {
 router.post('/validate', requireMondayAuth, async (req, res) => {
   try {
     const { operation } = req.body;
-    
+
     if (!operation) {
       return res.status(400).json({
         error: 'Operation is required',
@@ -94,7 +91,7 @@ router.post('/validate', requireMondayAuth, async (req, res) => {
     }
 
     const validation = await validationService.validateOperation(operation);
-    
+
     res.json({
       isValid: validation.isValid,
       errors: validation.errors,
@@ -124,7 +121,7 @@ router.get('/status/:operationId', requireMondayAuth, async (req, res) => {
   try {
     const { operationId } = req.params;
     const status = await operationExecutor.getStatus(operationId);
-    
+
     if (!status) {
       return res.status(404).json({
         error: 'Operation not found',
@@ -157,7 +154,7 @@ router.post('/cancel/:operationId', requireMondayAuth, async (req, res) => {
   try {
     const { operationId } = req.params;
     const result = await operationExecutor.cancel(operationId);
-    
+
     res.json({
       success: true,
       cancelled: result.cancelled,

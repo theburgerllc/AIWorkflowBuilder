@@ -1,6 +1,6 @@
 // nlp/operation-mapper.js
 const { Logger } = require('@mondaycom/apps-sdk');
-const AI_CONFIG = require('../config/ai-settings');
+const AI_CONFIG = require('../config/ai');
 
 class OperationMapper {
   constructor() {
@@ -17,9 +17,9 @@ class OperationMapper {
    */
   async mapToAPI(operation, context) {
     try {
-      this.logger.info('Mapping operation to API', { 
+      this.logger.info('Mapping operation to API', {
         operation: operation.operation,
-        confidence: operation.confidence 
+        confidence: operation.confidence
       });
 
       const mapper = this._getOperationMapper(operation.operation);
@@ -28,7 +28,7 @@ class OperationMapper {
       }
 
       const apiOperation = await mapper.call(this, operation, context);
-      
+
       // Validate the mapped operation
       const validation = this._validateAPIOperation(apiOperation, context);
       if (!validation.valid) {
@@ -81,7 +81,7 @@ class OperationMapper {
   async _mapItemCreate(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for item creation');
     }
@@ -106,7 +106,7 @@ class OperationMapper {
     // Add column values if specified
     if (params.columnValues || params.fields) {
       const columnValues = await this._mapColumnValues(
-        params.columnValues || params.fields, 
+        params.columnValues || params.fields,
         board
       );
       if (Object.keys(columnValues).length > 0) {
@@ -118,8 +118,8 @@ class OperationMapper {
     apiOp.query = `
       mutation CreateItem($board_id: ID!, $item_name: String!, $group_id: String, $column_values: JSON) {
         create_item(
-          board_id: $board_id, 
-          item_name: $item_name, 
+          board_id: $board_id,
+          item_name: $item_name,
           group_id: $group_id,
           column_values: $column_values
         ) {
@@ -145,7 +145,7 @@ class OperationMapper {
   async _mapItemUpdate(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for item update');
     }
@@ -197,7 +197,7 @@ class OperationMapper {
   async _mapStatusUpdate(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for status update');
     }
@@ -208,8 +208,8 @@ class OperationMapper {
     }
 
     // Find status column
-    const statusColumn = board.columns?.find(col => 
-      col.type === 'color' || col.type === 'status' || 
+    const statusColumn = board.columns?.find(col =>
+      col.type === 'color' || col.type === 'status' ||
       col.title.toLowerCase().includes('status')
     );
 
@@ -254,7 +254,7 @@ class OperationMapper {
   async _mapUserAssign(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for user assignment');
     }
@@ -270,7 +270,7 @@ class OperationMapper {
     }
 
     // Find people column
-    const peopleColumn = board.columns?.find(col => 
+    const peopleColumn = board.columns?.find(col =>
       col.type === 'people' || col.title.toLowerCase().includes('person') ||
       col.title.toLowerCase().includes('assign')
     );
@@ -312,7 +312,7 @@ class OperationMapper {
    */
   async _mapBoardCreate(operation, context) {
     const params = operation.parameters;
-    
+
     const apiOp = {
       method: 'create_board',
       mutation: 'create_board',
@@ -358,7 +358,7 @@ class OperationMapper {
   async _mapColumnCreate(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for column creation');
     }
@@ -397,21 +397,21 @@ class OperationMapper {
    */
   _findBoard(identifier, context) {
     if (!context.boards) return null;
-    
+
     // Try by ID first
     if (identifier && !isNaN(identifier)) {
       const board = context.boards.find(b => b.id === identifier.toString());
       if (board) return board;
     }
-    
+
     // Try by name (case insensitive)
     if (identifier && typeof identifier === 'string') {
-      const board = context.boards.find(b => 
+      const board = context.boards.find(b =>
         b.name.toLowerCase() === identifier.toLowerCase()
       );
       if (board) return board;
     }
-    
+
     // Return current board if no identifier provided
     return context.currentBoard || null;
   }
@@ -422,13 +422,13 @@ class OperationMapper {
    */
   _findGroup(identifier, board) {
     if (!board.groups) return null;
-    
+
     // Try by ID first
     const byId = board.groups.find(g => g.id === identifier);
     if (byId) return byId;
-    
+
     // Try by title (case insensitive)
-    const byTitle = board.groups.find(g => 
+    const byTitle = board.groups.find(g =>
       g.title.toLowerCase() === identifier.toLowerCase()
     );
     return byTitle || null;
@@ -442,7 +442,7 @@ class OperationMapper {
     // This would normally require an API call to get items
     // For now, return a placeholder that will be resolved at runtime
     if (!identifier) return null;
-    
+
     return {
       id: identifier,
       searchBy: isNaN(identifier) ? 'name' : 'id',
@@ -456,27 +456,27 @@ class OperationMapper {
    */
   _findUser(identifier, context) {
     if (!context.users) return null;
-    
+
     // Try by ID first
     if (!isNaN(identifier)) {
       const user = context.users.find(u => u.id === identifier.toString());
       if (user) return user;
     }
-    
+
     // Try by email
     if (identifier.includes('@')) {
-      const user = context.users.find(u => 
+      const user = context.users.find(u =>
         u.email.toLowerCase() === identifier.toLowerCase()
       );
       if (user) return user;
     }
-    
+
     // Try by name (case insensitive)
-    const user = context.users.find(u => 
+    const user = context.users.find(u =>
       u.name.toLowerCase().includes(identifier.toLowerCase()) ||
       identifier.toLowerCase().includes(u.name.toLowerCase())
     );
-    
+
     return user || null;
   }
 
@@ -486,24 +486,24 @@ class OperationMapper {
    */
   async _mapColumnValues(values, board) {
     const mappedValues = {};
-    
+
     if (!values || !board.columns) return mappedValues;
-    
+
     for (const [key, value] of Object.entries(values)) {
       // Find column by ID or title
-      const column = board.columns.find(col => 
+      const column = board.columns.find(col =>
         col.id === key || col.title.toLowerCase() === key.toLowerCase()
       );
-      
+
       if (!column) continue;
-      
+
       // Map value based on column type
       const mappedValue = this._mapValueByColumnType(value, column);
       if (mappedValue !== null) {
         mappedValues[column.id] = mappedValue;
       }
     }
-    
+
     return mappedValues;
   }
 
@@ -513,45 +513,45 @@ class OperationMapper {
    */
   _mapValueByColumnType(value, column) {
     if (value === null || value === undefined) return null;
-    
+
     switch (column.type) {
       case 'text':
       case 'long_text':
         return value.toString();
-        
+
       case 'numbers':
         const num = parseFloat(value);
         return isNaN(num) ? null : num;
-        
+
       case 'status':
       case 'color':
         return this._mapStatusValue(value, column);
-        
+
       case 'date':
         return this._mapDateValue(value);
-        
+
       case 'people':
         return this._mapPeopleValue(value);
-        
+
       case 'checkbox':
         return { checked: !!value };
-        
+
       case 'dropdown':
         return { ids: [this._findDropdownOptionId(value, column)] };
-        
+
       case 'email':
         return { email: value.toString(), text: value.toString() };
-        
+
       case 'phone':
         return { phone: value.toString(), countryShortName: 'US' };
-        
+
       case 'link':
         return { url: value.toString(), text: value.toString() };
-        
+
       case 'rating':
         const rating = parseInt(value);
         return isNaN(rating) ? null : Math.max(1, Math.min(5, rating));
-        
+
       default:
         return value.toString();
     }
@@ -563,9 +563,9 @@ class OperationMapper {
    */
   _mapStatusValue(value, column) {
     if (!value) return null;
-    
+
     const valueStr = value.toString().toLowerCase();
-    
+
     // Common status mappings
     const statusMap = {
       'done': 'Done',
@@ -581,19 +581,19 @@ class OperationMapper {
       'blocked': 'Stuck',
       'stuck': 'Stuck'
     };
-    
+
     // Try exact match first
     if (statusMap[valueStr]) {
       return statusMap[valueStr];
     }
-    
+
     // Try partial match
     for (const [key, mappedValue] of Object.entries(statusMap)) {
       if (valueStr.includes(key) || key.includes(valueStr)) {
         return mappedValue;
       }
     }
-    
+
     // Return original value if no mapping found
     return value.toString();
   }
@@ -606,7 +606,7 @@ class OperationMapper {
     try {
       const date = new Date(value);
       if (isNaN(date.getTime())) return null;
-      
+
       return {
         date: date.toISOString().split('T')[0], // YYYY-MM-DD format
         time: date.toTimeString().split(' ')[0]  // HH:MM:SS format
@@ -629,7 +629,7 @@ class OperationMapper {
         }))
       };
     }
-    
+
     return {
       personsAndTeams: [{
         id: parseInt(value.id || value),
@@ -646,11 +646,11 @@ class OperationMapper {
     try {
       const settings = JSON.parse(column.settings_str || '{}');
       const options = settings.options || [];
-      
-      const option = options.find(opt => 
+
+      const option = options.find(opt =>
         opt.name.toLowerCase() === value.toString().toLowerCase()
       );
-      
+
       return option ? option.id : null;
     } catch (error) {
       return null;
@@ -680,7 +680,7 @@ class OperationMapper {
       'long_text': 'long_text',
       'textarea': 'long_text'
     };
-    
+
     return typeMap[type.toLowerCase()] || 'text';
   }
 
@@ -725,18 +725,18 @@ class OperationMapper {
    */
   _validateAPIOperation(apiOperation, context) {
     const validation = { valid: true, errors: [], warnings: [] };
-    
+
     // Check required fields
     if (!apiOperation.method) {
       validation.errors.push('Missing API method');
       validation.valid = false;
     }
-    
+
     if (!apiOperation.query && !apiOperation.mutation) {
       validation.errors.push('Missing GraphQL query/mutation');
       validation.valid = false;
     }
-    
+
     // Validate variables
     if (apiOperation.variables) {
       for (const [key, value] of Object.entries(apiOperation.variables)) {
@@ -745,7 +745,7 @@ class OperationMapper {
         }
       }
     }
-    
+
     // Check permissions based on operation
     if (context.permissions) {
       const permissionChecks = {
@@ -753,14 +753,14 @@ class OperationMapper {
         'delete_item': 'canDeleteItems',
         'create_automation': 'canCreateAutomations'
       };
-      
+
       const requiredPermission = permissionChecks[apiOperation.method];
       if (requiredPermission && !context.permissions[requiredPermission]) {
         validation.errors.push(`Insufficient permissions for ${apiOperation.method}`);
         validation.valid = false;
       }
     }
-    
+
     return validation;
   }
 
@@ -797,7 +797,7 @@ class OperationMapper {
   async _mapItemDelete(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for item deletion');
     }
@@ -830,7 +830,7 @@ class OperationMapper {
   async _mapBoardUpdate(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for update');
     }
@@ -878,13 +878,13 @@ class OperationMapper {
   async _mapColumnUpdate(operation, context) {
     const params = operation.parameters;
     const board = this._findBoard(params.boardId || params.boardName, context);
-    
+
     if (!board) {
       throw new Error('Board not found for column update');
     }
 
-    const column = board.columns?.find(col => 
-      col.id === params.columnId || 
+    const column = board.columns?.find(col =>
+      col.id === params.columnId ||
       col.title.toLowerCase() === (params.columnTitle || params.columnName || '').toLowerCase()
     );
 

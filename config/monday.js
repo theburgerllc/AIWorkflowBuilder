@@ -1,9 +1,27 @@
-const mondaySdk = require('@mondaycom/apps-sdk');
-const { logger } = require('../utils/logger');
+const { Storage, SecureStorage, Logger } = require('@mondaycom/apps-sdk');
+const axios = require('axios');
+const logger = require('../utils/logger');
 
-// Initialize Monday SDK instances
-const mondayClient = mondaySdk();
-const { Storage, SecureStorage } = mondaySdk;
+// Create a simple Monday client using axios
+const mondayClient = {
+  api: async (query, variables = {}) => {
+    try {
+      const response = await axios.post('https://api.monday.com/v2', {
+        query,
+        variables
+      }, {
+        headers: {
+          'Content-Type': 'application/json',
+          'API-Version': '2024-01'
+        }
+      });
+      return response.data;
+    } catch (error) {
+      logger.error('Monday API call failed:', error);
+      throw error;
+    }
+  }
+};
 
 // Configuration object
 const mondayConfig = {
@@ -15,9 +33,10 @@ const mondayConfig = {
   apiUrl: process.env.MONDAY_API_URL || 'https://api.monday.com/v2',
   oauthUrl: 'https://auth.monday.com/oauth2/authorize',
   tokenUrl: 'https://auth.monday.com/oauth2/token',
-  
+
   // Required OAuth scopes for full functionality
   requiredScopes: [
+    'me:read',
     'boards:read',
     'boards:write',
     'workspaces:read',
@@ -32,7 +51,7 @@ const mondayConfig = {
     'notifications:write',
     'webhooks:write'
   ],
-  
+
   // Rate limiting configuration
   rateLimits: {
     complexity: 10000000, // 10M complexity per minute
@@ -76,13 +95,13 @@ function validateConfig() {
     'MONDAY_CLIENT_SECRET',
     'MONDAY_SIGNING_SECRET'
   ];
-  
+
   const missing = required.filter(key => !process.env[key]);
-  
+
   if (missing.length > 0) {
     throw new Error(`Missing required environment variables: ${missing.join(', ')}`);
   }
-  
+
   logger.info('Monday configuration validated successfully');
 }
 

@@ -1,6 +1,6 @@
 // nlp/operation-interpreter.js
-const ClaudeService = require('../services/claude-service');
-const AI_CONFIG = require('../config/ai-settings');
+const ClaudeService = require('../services/claude');
+const AI_CONFIG = require('../config/ai');
 const { Logger } = require('@mondaycom/apps-sdk');
 
 class OperationInterpreter {
@@ -19,20 +19,20 @@ class OperationInterpreter {
    */
   async interpret(userInput, context) {
     try {
-      this.logger.info('Starting interpretation', { 
+      this.logger.info('Starting interpretation', {
         inputLength: userInput.length,
-        hasContext: !!context 
+        hasContext: !!context
       });
 
       // Step 1: Quick pattern matching for common operations
       const quickMatch = this._quickPatternMatch(userInput);
-      
+
       // Step 2: Claude AI analysis for complex interpretation
       const aiAnalysis = await this.claudeService.analyzeOperation(userInput, context);
-      
+
       // Step 3: Combine and validate results
       const combinedResult = this._combineAnalysis(quickMatch, aiAnalysis, context);
-      
+
       // Step 4: Calculate final confidence score
       combinedResult.confidence = this.confidenceCalculator.calculate(
         combinedResult, userInput, context
@@ -67,7 +67,7 @@ class OperationInterpreter {
       // Look for operation separators
       const separators = [' and ', ' then ', ', ', ' also ', ' plus '];
       let hasMultiple = separators.some(sep => userInput.toLowerCase().includes(sep));
-      
+
       if (!hasMultiple) {
         // Single operation
         const result = await this.interpret(userInput, context);
@@ -107,10 +107,10 @@ class OperationInterpreter {
       `;
 
       const resolved = await this.claudeService.analyzeOperation(combinedInput, context);
-      
+
       // Boost confidence since user provided clarification
       resolved.confidence = Math.min(100, resolved.confidence + 15);
-      
+
       this.logger.info('Ambiguity resolved', {
         originalConfidence: ambiguousOperation.confidence,
         resolvedConfidence: resolved.confidence
@@ -179,7 +179,7 @@ class OperationInterpreter {
           description: 'New item with colon syntax'
         }
       ],
-      
+
       STATUS_UPDATE: [
         {
           regex: /(?:set|change|update)\s+(?:the\s+)?status\s+(?:of\s+)?(?:item\s+)?["']?([^"']+)["']?\s+to\s+["']?([^"']+)["']?/,
@@ -304,7 +304,7 @@ class OperationInterpreter {
    */
   _segmentInput(input, separators) {
     let segments = [input];
-    
+
     for (const separator of separators) {
       const newSegments = [];
       for (const segment of segments) {
@@ -312,7 +312,7 @@ class OperationInterpreter {
       }
       segments = newSegments;
     }
-    
+
     return segments.filter(s => s.trim().length > 0);
   }
 
@@ -363,36 +363,36 @@ class ConfidenceCalculator {
 
   _calculateOperationScore(operation) {
     if (!operation.operation || operation.operation === 'UNKNOWN') return 0;
-    
+
     const baseScore = operation.confidence || 50;
-    
+
     // Boost for pattern matches
     if (operation.patternUsed) {
       return Math.min(100, baseScore + 10);
     }
-    
+
     return baseScore;
   }
 
   _calculateParameterScore(operation) {
     if (!operation.parameters) return 0;
-    
+
     const requiredParams = AI_CONFIG.operations.types[operation.operation]?.requiredParams || [];
-    const providedParams = Object.keys(operation.parameters).filter(key => 
+    const providedParams = Object.keys(operation.parameters).filter(key =>
       operation.parameters[key] !== null && operation.parameters[key] !== undefined
     );
-    
+
     if (requiredParams.length === 0) return 100;
-    
+
     const completeness = providedParams.length / requiredParams.length;
     return Math.round(completeness * 100);
   }
 
   _calculateContextScore(operation, context) {
     if (!context) return 50;
-    
+
     let score = 70; // Base score for having context
-    
+
     // Check context relevance to operation
     switch (operation.operation) {
       case 'ITEM_CREATE':
@@ -400,39 +400,39 @@ class ConfidenceCalculator {
         if (context.currentBoard) score += 20;
         if (context.currentBoard?.columns) score += 10;
         break;
-        
+
       case 'USER_ASSIGN':
         if (context.users && context.users.length > 0) score += 30;
         break;
-        
+
       case 'BOARD_CREATE':
         if (context.permissions?.canCreateBoards) score += 30;
         break;
     }
-    
+
     return Math.min(100, score);
   }
 
   _calculateClarityScore(userInput) {
     if (!userInput) return 0;
-    
+
     let score = 50; // Base score
-    
+
     // Check for clear intent markers
     const intentMarkers = ['create', 'add', 'update', 'delete', 'assign', 'change', 'set'];
     if (intentMarkers.some(marker => userInput.toLowerCase().includes(marker))) {
       score += 20;
     }
-    
+
     // Check for specific names/values in quotes
     if (userInput.includes('"') || userInput.includes("'")) {
       score += 15;
     }
-    
+
     // Penalize very short or very long inputs
     if (userInput.length < 10) score -= 20;
     if (userInput.length > 200) score -= 10;
-    
+
     return Math.max(0, Math.min(100, score));
   }
 }

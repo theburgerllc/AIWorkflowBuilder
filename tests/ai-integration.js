@@ -4,9 +4,9 @@ const express = require('express');
 const { expect } = require('chai');
 const sinon = require('sinon');
 
-const AIRoutes = require('../routes/ai-routes');
-const ClaudeService = require('../services/claude-service');
-const ContextService = require('../services/context-service');
+const AIRoutes = require('../routes/ai');
+const ClaudeService = require('../services/claude');
+const ContextService = require('../services/context');
 const OperationInterpreter = require('../nlp/operation-interpreter');
 const OperationMapper = require('../nlp/operation-mapper');
 
@@ -26,10 +26,10 @@ describe('AI Integration Tests', () => {
     // Setup Express app with AI routes
     app = express();
     app.use(express.json());
-    
+
     aiRoutes = new AIRoutes(mockMondayClient);
     app.use('/api/ai', aiRoutes.getRouter());
-    
+
     // Setup stubs
     claudeStub = sinon.stub(ClaudeService.prototype, 'analyzeOperation');
     contextStub = sinon.stub(ContextService.prototype, 'gatherContext');
@@ -141,7 +141,7 @@ describe('AI Integration Tests', () => {
 
     it('should handle context gathering failures gracefully', async () => {
       const userInput = 'Create a task';
-      
+
       contextStub.rejects(new Error('API connection failed'));
       claudeStub.resolves({
         operation: 'ITEM_CREATE',
@@ -297,7 +297,7 @@ describe('AI Integration Tests', () => {
       claudeStub.resolves(mockInterpretation);
 
       const startTime = Date.now();
-      
+
       await request(app)
         .post('/api/ai/analyze-request')
         .send({
@@ -323,7 +323,7 @@ describe('AI Integration Tests', () => {
       claudeStub.resolves(mockInterpretation);
 
       // Make 5 concurrent requests
-      const requests = Array.from({ length: 5 }, (_, i) => 
+      const requests = Array.from({ length: 5 }, (_, i) =>
         request(app)
           .post('/api/ai/analyze-request')
           .send({
@@ -333,7 +333,7 @@ describe('AI Integration Tests', () => {
       );
 
       const responses = await Promise.all(requests);
-      
+
       // All should succeed
       responses.forEach(response => {
         expect(response.status).to.equal(200);

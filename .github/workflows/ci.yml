@@ -1,0 +1,233 @@
+name: CI/CD Pipeline
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v4
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run linting
+      run: npm run lint
+    
+    - name: Run tests with coverage
+      run: npm run test:coverage
+      env:
+        NODE_ENV: test
+        MONDAY_CLIENT_ID: test_client_id
+        MONDAY_CLIENT_SECRET: test_client_secret
+        MONDAY_SIGNING_SECRET: test_signing_secret
+        ANTHROPIC_API_KEY: test_api_key
+        JWT_SECRET: test_jwt_secret
+        ENCRYPTION_KEY: test_encryption_key_32_characters
+    
+    - name: Upload coverage reports
+      uses: codecov/codecov-action@v3
+      with:
+        file: ./coverage/lcov.info
+        flags: unittests
+        name: codecov-umbrella
+    
+    - name: Check for open handles
+      run: |
+        npm test 2>&1 | grep -i "open handle" && exit 1 || echo "No open handles detected"
+
+  security:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Run security audit
+      run: npm audit --audit-level=moderate
+    
+    - name: Check for secrets
+      uses: trufflesecurity/trufflehog@main
+      with:
+        path: ./
+        base: main
+        head: HEAD
+
+  build:
+    runs-on: ubuntu-latest
+    needs: [test, security]
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '18.x'
+        cache: 'npm'
+    
+    - name: Install dependencies
+      run: npm ci
+    
+    - name: Build application
+      run: npm run build
+    
+    - name: Build Docker image
+      run: |
+        docker build -f deployment/Dockerfile -t ai-workflow-builder:${{ github.sha }} .
+        docker tag ai-workflow-builder:${{ github.sha }} ai-workflow-builder:latest
+    
+    - name: Test Docker image
+      run: |
+        docker run -d --name test-container -p 8080:8080 \
+          -e NODE_ENV=test \
+          -e MONDAY_CLIENT_ID=test \
+          -e MONDAY_CLIENT_SECRET=test \
+          -e MONDAY_SIGNING_SECRET=test \
+          -e ANTHROPIC_API_KEY=test \
+          -e JWT_SECRET=test \
+          -e ENCRYPTION_KEY=test_encryption_key_32_characters \
+          ai-workflow-builder:latest
+        
+        # Wait for container to start
+        sleep 10
+        
+        # Test health endpoint
+        curl -f http://localhost:8080/health || exit 1
+        
+        # Cleanup
+        docker stop test-container
+        docker rm test-container
+
+  deploy:
+    runs-on: ubuntu-latest
+    needs: [test, security, build]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Deploy to Railway
+      uses: railway-app/railway-action@v1
+      with:
+        railway-token: ${{ secrets.RAILWAY_TOKEN }}
+        service: ai-workflow-builder
+        environment: production
+    
+    - name: Health check after deployment
+      run: |
+        sleep 30  # Wait for deployment
+        curl -f ${{ secrets.PRODUCTION_URL }}/health || exit 1
+    
+    - name: Notify deployment success
+      if: success()
+      run: |
+        echo "Deployment successful! Application is live at ${{ secrets.PRODUCTION_URL }}"
+    
+    - name: Notify deployment failure
+      if: failure()
+      run: |
+        echo "Deployment failed! Check logs for details."
+        exit 1
+
+  performance:
+    runs-on: ubuntu-latest
+    needs: [deploy]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Performance testing
+      run: |
+        # Test response times
+        response_time=$(curl -o /dev/null -s -w '%{time_total}' ${{ secrets.PRODUCTION_URL }}/health)
+        echo "Health check response time: ${response_time}s"
+        
+        # Ensure response time is under 5 seconds
+        if (( $(echo "$response_time > 5.0" | bc -l) )); then
+          echo "Health check too slow: ${response_time}s > 5.0s"
+          exit 1
+        fi
+        
+        # Test API endpoint response time
+        api_response_time=$(curl -o /dev/null -s -w '%{time_total}' \
+          -X POST \
+          -H "Content-Type: application/json" \
+          -d '{"test": true}' \
+          ${{ secrets.PRODUCTION_URL }}/api/health)
+        
+        echo "API response time: ${api_response_time}s"
+        
+        # Ensure API response time is under 2 seconds
+        if (( $(echo "$api_response_time > 2.0" | bc -l) )); then
+          echo "API too slow: ${api_response_time}s > 2.0s"
+          exit 1
+        fi
+
+  marketplace-validation:
+    runs-on: ubuntu-latest
+    needs: [performance]
+    if: github.ref == 'refs/heads/main'
+    
+    steps:
+    - name: Validate Monday.com compliance
+      run: |
+        # Test rate limiting
+        echo "Testing rate limiting compliance..."
+        
+        # Test CORS headers
+        cors_headers=$(curl -s -I -X OPTIONS \
+          -H "Origin: https://monday.com" \
+          ${{ secrets.PRODUCTION_URL }}/api/health | grep -i "access-control")
+        
+        if [[ -z "$cors_headers" ]]; then
+          echo "CORS headers missing for Monday.com"
+          exit 1
+        fi
+        
+        echo "CORS validation passed"
+        
+        # Test webhook signature verification
+        echo "Testing webhook signature verification..."
+        
+        # This should fail without proper signature
+        response=$(curl -s -o /dev/null -w '%{http_code}' \
+          -X POST \
+          -H "Content-Type: application/json" \
+          -d '{"test": "data"}' \
+          ${{ secrets.PRODUCTION_URL }}/monday/execute_action)
+        
+        if [[ "$response" != "401" ]]; then
+          echo "Webhook signature verification not working properly"
+          exit 1
+        fi
+        
+        echo "Webhook signature verification passed"
+        
+        echo "All Monday.com marketplace validations passed!"

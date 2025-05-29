@@ -1,5 +1,5 @@
 // services/validation-service.js
-import { mondayClient } from '../config/monday-client.js';
+const { mondayClient } = require('../config/monday');
 
 class ValidationService {
   constructor() {
@@ -16,37 +16,37 @@ class ValidationService {
   async validateOperation(operation, context) {
     const validations = [];
     const warnings = [];
-    
+
     try {
       // Basic validation
       validations.push(this.validateBasicRequirements(operation));
-      
+
       // Permission validation
       validations.push(await this.validatePermissions(operation, context));
-      
+
       // Resource validation
       validations.push(await this.validateResources(operation));
-      
+
       // Data validation
       validations.push(await this.validateData(operation));
-      
+
       // Constraint validation
       validations.push(await this.validateConstraints(operation));
-      
+
       // Business logic validation
       validations.push(await this.validateBusinessLogic(operation));
-      
+
       // Combine results
       const errors = validations.flatMap(v => v.errors || []);
       const allWarnings = validations.flatMap(v => v.warnings || []);
-      
+
       return {
         valid: errors.length === 0,
         errors,
         warnings: allWarnings,
         canProceed: errors.length === 0 && !allWarnings.some(w => w.blocking)
       };
-      
+
     } catch (error) {
       return {
         valid: false,
@@ -64,15 +64,15 @@ class ValidationService {
   validateBasicRequirements(operation) {
     const errors = [];
     const warnings = [];
-    
+
     if (!operation.type) {
       errors.push('Operation type is required');
     }
-    
+
     if (!operation.parameters) {
       errors.push('Operation parameters required');
     }
-    
+
     // Check parameter completeness
     const requiredParams = this.getRequiredParameters(operation.type);
     requiredParams.forEach(param => {
@@ -80,7 +80,7 @@ class ValidationService {
         errors.push(`Required parameter missing: ${param}`);
       }
     });
-    
+
     return { errors, warnings };
   }
 
@@ -91,19 +91,19 @@ class ValidationService {
   async validatePermissions(operation, context) {
     const errors = [];
     const warnings = [];
-    
+
     // Get user permissions
     const permissions = await this.getUserPermissions(context.userId, context.boardId);
-    
+
     // Check operation-specific permissions
     const requiredPermissions = this.getRequiredPermissions(operation.type);
-    
+
     requiredPermissions.forEach(perm => {
       if (!permissions[perm]) {
         errors.push(`Insufficient permissions: ${perm} required`);
       }
     });
-    
+
     // Guest user restrictions
     if (permissions.isGuest) {
       const guestRestricted = ['delete_board', 'manage_users', 'create_automation'];
@@ -111,7 +111,7 @@ class ValidationService {
         errors.push('Guest users cannot perform this operation');
       }
     }
-    
+
     return { errors, warnings };
   }
 
@@ -123,7 +123,7 @@ class ValidationService {
     const errors = [];
     const warnings = [];
     const { parameters } = operation;
-    
+
     // Validate board exists
     if (parameters.boardId) {
       const boardExists = await this.checkBoardExists(parameters.boardId);
@@ -131,7 +131,7 @@ class ValidationService {
         errors.push(`Board ${parameters.boardId} not found`);
       }
     }
-    
+
     // Validate item exists
     if (parameters.itemId) {
       const itemExists = await this.checkItemExists(parameters.itemId);
@@ -139,7 +139,7 @@ class ValidationService {
         errors.push(`Item ${parameters.itemId} not found`);
       }
     }
-    
+
     // Validate group exists
     if (parameters.groupId && parameters.boardId) {
       const groupExists = await this.checkGroupExists(parameters.boardId, parameters.groupId);
@@ -147,7 +147,7 @@ class ValidationService {
         errors.push(`Group ${parameters.groupId} not found`);
       }
     }
-    
+
     // Validate user exists
     if (parameters.userId) {
       const userExists = await this.checkUserExists(parameters.userId);
@@ -155,7 +155,7 @@ class ValidationService {
         errors.push(`User ${parameters.userId} not found`);
       }
     }
-    
+
     // Validate column exists
     if (parameters.columnId && parameters.boardId) {
       const columnInfo = await this.getColumnInfo(parameters.boardId, parameters.columnId);
@@ -163,7 +163,7 @@ class ValidationService {
         errors.push(`Column ${parameters.columnId} not found`);
       }
     }
-    
+
     return { errors, warnings };
   }
 
@@ -175,7 +175,7 @@ class ValidationService {
     const errors = [];
     const warnings = [];
     const { parameters } = operation;
-    
+
     // Validate item name length
     if (parameters.itemName) {
       if (parameters.itemName.length > 255) {
@@ -185,7 +185,7 @@ class ValidationService {
         errors.push('Item name cannot be empty');
       }
     }
-    
+
     // Validate column values
     if (parameters.columnValues && parameters.boardId) {
       const columnValidation = await this.validateColumnValues(
@@ -195,7 +195,7 @@ class ValidationService {
       errors.push(...columnValidation.errors);
       warnings.push(...columnValidation.warnings);
     }
-    
+
     // Validate batch size
     if (parameters.itemIds && Array.isArray(parameters.itemIds)) {
       if (parameters.itemIds.length > 100) {
@@ -209,7 +209,7 @@ class ValidationService {
         errors.push('At least one item ID required');
       }
     }
-    
+
     return { errors, warnings };
   }
 
@@ -221,7 +221,7 @@ class ValidationService {
     const errors = [];
     const warnings = [];
     const { type, parameters } = operation;
-    
+
     // Board limits
     if (type === 'create_item' && parameters.boardId) {
       const itemCount = await this.getBoardItemCount(parameters.boardId);
@@ -235,7 +235,7 @@ class ValidationService {
         });
       }
     }
-    
+
     // Group limits
     if (type === 'create_group' && parameters.boardId) {
       const groupCount = await this.getBoardGroupCount(parameters.boardId);
@@ -243,7 +243,7 @@ class ValidationService {
         errors.push('Board has reached maximum group limit (100)');
       }
     }
-    
+
     // Automation limits
     if (type === 'create_automation' && parameters.boardId) {
       const automationCount = await this.getBoardAutomationCount(parameters.boardId);
@@ -254,7 +254,7 @@ class ValidationService {
         });
       }
     }
-    
+
     return { errors, warnings };
   }
 
@@ -266,7 +266,7 @@ class ValidationService {
     const errors = [];
     const warnings = [];
     const { type, parameters } = operation;
-    
+
     // Prevent circular dependencies
     if (type === 'move_item' && parameters.targetBoardId) {
       if (parameters.targetBoardId === parameters.sourceBoardId) {
@@ -276,13 +276,13 @@ class ValidationService {
         });
       }
     }
-    
+
     // Validate automation logic
     if (type === 'create_automation') {
       const automationWarnings = this.validateAutomationLogic(parameters);
       warnings.push(...automationWarnings);
     }
-    
+
     // Check for duplicate operations
     if (type === 'create_item' && parameters.boardId && parameters.itemName) {
       const isDuplicate = await this.checkDuplicateItem(
@@ -297,7 +297,7 @@ class ValidationService {
         });
       }
     }
-    
+
     return { errors, warnings };
   }
 
@@ -308,18 +308,18 @@ class ValidationService {
   async validateColumnValues(boardId, columnValues) {
     const errors = [];
     const warnings = [];
-    
+
     // Get board columns
     const columns = await this.getBoardColumns(boardId);
-    
+
     for (const [columnId, value] of Object.entries(columnValues)) {
       const column = columns.find(c => c.id === columnId);
-      
+
       if (!column) {
         errors.push(`Column ${columnId} not found on board`);
         continue;
       }
-      
+
       // Validate based on column type
       const validation = this.validateColumnValue(column, value);
       if (validation.error) {
@@ -332,7 +332,7 @@ class ValidationService {
         });
       }
     }
-    
+
     return { errors, warnings };
   }
 
@@ -351,7 +351,7 @@ class ValidationService {
         }
         return {};
       },
-      
+
       'numbers': (val) => {
         const num = parseFloat(val);
         if (isNaN(num)) {
@@ -359,7 +359,7 @@ class ValidationService {
         }
         return {};
       },
-      
+
       'status': (val) => {
         if (typeof val === 'string') {
           return { warning: 'Status should be object with label property' };
@@ -369,7 +369,7 @@ class ValidationService {
         }
         return {};
       },
-      
+
       'date': (val) => {
         if (typeof val === 'string') {
           const dateRegex = /^\d{4}-\d{2}-\d{2}$/;
@@ -385,7 +385,7 @@ class ValidationService {
         }
         return {};
       },
-      
+
       'people': (val) => {
         if (!val.personsAndTeams || !Array.isArray(val.personsAndTeams)) {
           return { error: 'People column requires personsAndTeams array' };
@@ -398,7 +398,7 @@ class ValidationService {
         }
         return {};
       },
-      
+
       'email': (val) => {
         if (typeof val !== 'string') {
           return { error: 'Email must be a string' };
@@ -409,7 +409,7 @@ class ValidationService {
         }
         return {};
       },
-      
+
       'link': (val) => {
         if (typeof val === 'string') {
           return { warning: 'Link should be object with url and text properties' };
@@ -420,12 +420,12 @@ class ValidationService {
         return {};
       }
     };
-    
+
     const validator = validators[column.type];
     if (!validator) {
       return { warning: `Validation not implemented for ${column.type} columns` };
     }
-    
+
     return validator(value);
   }
 
@@ -435,7 +435,7 @@ class ValidationService {
    */
   validateAutomationLogic(parameters) {
     const warnings = [];
-    
+
     // Check for infinite loops
     if (parameters.trigger?.type === 'status_changes_to_something' &&
         parameters.actions?.some(a => a.type === 'change_status_column_value')) {
@@ -443,7 +443,7 @@ class ValidationService {
       const actionStatus = parameters.actions.find(
         a => a.type === 'change_status_column_value'
       )?.params?.statusLabel;
-      
+
       if (triggerStatus === actionStatus) {
         warnings.push({
           message: 'Automation may create infinite loop',
@@ -452,7 +452,7 @@ class ValidationService {
         });
       }
     }
-    
+
     // Check for conflicting actions
     const moveActions = parameters.actions?.filter(a => a.type === 'move_item_to_group');
     if (moveActions?.length > 1) {
@@ -461,7 +461,7 @@ class ValidationService {
         suggestion: 'Consider using only one move action'
       });
     }
-    
+
     return warnings;
   }
 
@@ -473,7 +473,7 @@ class ValidationService {
     const cacheKey = `board_${boardId}`;
     const cached = this.getFromCache(cacheKey);
     if (cached !== null) return cached;
-    
+
     try {
       const query = `
         query CheckBoard($boardId: [ID!]) {
@@ -551,7 +551,7 @@ class ValidationService {
     const cacheKey = `columns_${boardId}`;
     const cached = this.getFromCache(cacheKey);
     if (cached) return cached;
-    
+
     try {
       const query = `
         query GetColumns($boardId: [ID!]) {
@@ -664,7 +664,7 @@ class ValidationService {
       'bulk_delete': ['itemIds', 'confirmationToken'],
       'create_automation': ['boardId', 'trigger', 'actions', 'name']
     };
-    
+
     return requirements[operationType] || [];
   }
 
@@ -686,7 +686,7 @@ class ValidationService {
       'bulk_delete': ['canDelete'],
       'create_automation': ['canManageBoard']
     };
-    
+
     return permissions[operationType] || [];
   }
 
@@ -713,6 +713,18 @@ class ValidationService {
   clearCache() {
     this.cache.clear();
   }
+
+  /**
+   * Health check for validation service (required by executeAction controller)
+   */
+  async isHealthy() {
+    try {
+      // Simple health check - verify cache is working
+      return this.cache instanceof Map;
+    } catch (error) {
+      return false;
+    }
+  }
 }
 
-export default new ValidationService();
+module.exports = ValidationService;

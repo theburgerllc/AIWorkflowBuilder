@@ -12,7 +12,7 @@ const AI_CONFIG = require('../config/ai');
 class AIRoutes {
   constructor(mondayClient) {
     this.mondayClient = mondayClient;
-    this.logger = new Logger('ai-routes');
+    this.logger = require('../utils/logger');
     this.interpreter = new OperationInterpreter();
     this.mapper = new OperationMapper();
     this.contextService = new ContextService(mondayClient);

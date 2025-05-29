@@ -38,11 +38,11 @@ export async function getUserByEmail(email) {
 
     const result = await mondayClient.request(query, { email });
     const user = result.data.users[0] || null;
-    
+
     if (user) {
       setCache(cacheKey, user);
     }
-    
+
     return user;
   } catch (error) {
     console.error('Failed to get user by email:', error);
@@ -73,10 +73,10 @@ export async function getUsersByName(name, boardId) {
 
     const result = await mondayClient.request(query, { boardId: [boardId] });
     const users = result.data.boards[0]?.subscribers || [];
-    
+
     // Fuzzy match on name
     const searchName = name.toLowerCase();
-    return users.filter(user => 
+    return users.filter(user =>
       user.name.toLowerCase().includes(searchName)
     );
   } catch (error) {
@@ -94,22 +94,22 @@ export async function getUsersByName(name, boardId) {
 export async function getGroupByName(boardId, groupName) {
   try {
     const groups = await getBoardGroups(boardId);
-    
+
     // Try exact match first
     let group = groups.find(g => g.title === groupName);
-    
+
     // Try case-insensitive match
     if (!group) {
       const searchName = groupName.toLowerCase();
       group = groups.find(g => g.title.toLowerCase() === searchName);
     }
-    
+
     // Try partial match
     if (!group) {
       const searchName = groupName.toLowerCase();
       group = groups.find(g => g.title.toLowerCase().includes(searchName));
     }
-    
+
     return group || null;
   } catch (error) {
     console.error('Failed to get group by name:', error);
@@ -144,10 +144,10 @@ export async function getBoardGroups(boardId) {
 
     const result = await mondayClient.request(query, { boardId: [boardId] });
     const groups = result.data.boards[0]?.groups || [];
-    
+
     // Filter out archived groups by default
     const activeGroups = groups.filter(g => !g.archived);
-    
+
     setCache(cacheKey, activeGroups);
     return activeGroups;
   } catch (error) {
@@ -165,16 +165,16 @@ export async function getBoardGroups(boardId) {
 export async function getColumnByName(boardId, columnName) {
   try {
     const columns = await getBoardColumns(boardId);
-    
+
     // Try exact match first
     let column = columns.find(c => c.title === columnName);
-    
+
     // Try case-insensitive match
     if (!column) {
       const searchName = columnName.toLowerCase();
       column = columns.find(c => c.title.toLowerCase() === searchName);
     }
-    
+
     return column || null;
   } catch (error) {
     console.error('Failed to get column by name:', error);
@@ -209,10 +209,10 @@ export async function getBoardColumns(boardId) {
 
     const result = await mondayClient.request(query, { boardId: [boardId] });
     const columns = result.data.boards[0]?.columns || [];
-    
+
     // Filter out archived columns
     const activeColumns = columns.filter(c => !c.archived);
-    
+
     setCache(cacheKey, activeColumns);
     return activeColumns;
   } catch (error) {
@@ -231,11 +231,11 @@ export async function getStatusLabels(boardId, columnId) {
   try {
     const columns = await getBoardColumns(boardId);
     const statusColumn = columns.find(c => c.id === columnId && c.type === 'status');
-    
+
     if (!statusColumn || !statusColumn.settings_str) {
       return [];
     }
-    
+
     const settings = JSON.parse(statusColumn.settings_str);
     return Object.values(settings.labels || {});
   } catch (error) {
@@ -275,10 +275,10 @@ export async function searchItems(boardId, searchTerm) {
 
     const result = await mondayClient.request(query, { boardId: [boardId] });
     const items = result.data.boards[0]?.items_page?.items || [];
-    
+
     // Filter items by search term
     const search = searchTerm.toLowerCase();
-    return items.filter(item => 
+    return items.filter(item =>
       item.name.toLowerCase().includes(search)
     );
   } catch (error) {
@@ -298,4 +298,28 @@ export async function getBoardTemplates() {
 
   try {
     const query = `
-      
+      query {
+        boards(limit: 50) {
+          id
+          name
+          description
+          board_kind
+          columns {
+            id
+            title
+            type
+          }
+        }
+      }
+    `;
+
+    const response = await mondayApiRequest(query, {}, accessToken);
+    const templates = response.data.boards || [];
+
+    setCache(cacheKey, templates, 3600000); // Cache for 1 hour
+    return templates;
+  } catch (error) {
+    logger.error('Error fetching board templates:', error);
+    return [];
+  }
+};

@@ -1,37 +1,38 @@
 {
-  "name": "Claude AI Automation Builder",
+  "name": "AI Workflow Builder",
   "version": "1.0.0",
   "description": "AI-powered automation builder that creates Monday.com workflows using natural language. Simply describe what you want to automate, and Claude AI will build it for you.",
   "short_description": "Build Monday.com automations with natural language using Claude AI",
-  "icon": "https://your-app-domain.com/assets/icon.png",
+  "icon": "https://aiworkflowbuilder-production.up.railway.app/assets/icon.png",
   "screenshots": [
-    "https://your-app-domain.com/assets/screenshot1.png",
-    "https://your-app-domain.com/assets/screenshot2.png",
-    "https://your-app-domain.com/assets/screenshot3.png"
+    "https://aiworkflowbuilder-production.up.railway.app/assets/screenshot1.png",
+    "https://aiworkflowbuilder-production.up.railway.app/assets/screenshot2.png",
+    "https://aiworkflowbuilder-production.up.railway.app/assets/screenshot3.png"
   ],
   "categories": ["automation", "ai", "productivity"],
   "tags": ["ai", "automation", "claude", "nlp", "workflow", "productivity"],
   "author": {
-    "name": "Your Company Name",
-    "email": "support@your-domain.com",
-    "website": "https://your-domain.com"
+    "name": "The Burger LLC",
+    "email": "burger@theburgerllc.com",
+    "website": "https://aiworkflowbuilder-production.up.railway.app"
   },
   "support": {
-    "email": "support@your-domain.com",
-    "documentation": "https://your-domain.com/docs",
-    "privacy_policy": "https://your-domain.com/privacy",
-    "terms_of_service": "https://your-domain.com/terms"
+    "email": "burger@theburgerllc.com",
+    "documentation": "https://aiworkflowbuilder-production.up.railway.app/docs",
+    "privacy_policy": "https://aiworkflowbuilder-production.up.railway.app/privacy",
+    "terms_of_service": "https://aiworkflowbuilder-production.up.railway.app/terms"
   },
   "app_version_id": "V1",
   "app_id": 10416253,
   "client_id": "1aa883bd722bc9c070f3aed86160751a",
-  "base_url": "https://your-app-domain.com",
-  "health_check_url": "https://your-app-domain.com/health",
+  "base_url": "https://aiworkflowbuilder-production.up.railway.app",
+  "health_check_url": "https://aiworkflowbuilder-production.up.railway.app/health",
   "oauth": {
-    "redirect_uri": "https://your-app-domain.com/auth/monday/callback",
+    "redirect_uri": "https://aiworkflowbuilder-production.up.railway.app/auth/monday/callback",
     "scopes": [
+      "me:read",
       "boards:read",
-      "boards:write", 
+      "boards:write",
       "workspaces:read",
       "workspaces:write",
       "users:read",
@@ -50,19 +51,19 @@
       "type": "AppFeature",
       "name": "AI Automation Builder",
       "description": "Create complex automations using natural language descriptions",
-      "icon": "https://your-app-domain.com/assets/automation-icon.png"
+      "icon": "https://aiworkflowbuilder-production.up.railway.app/assets/automation-icon.png"
     },
     {
-      "type": "AppFeature", 
+      "type": "AppFeature",
       "name": "Smart Workflow Analysis",
       "description": "AI analyzes your boards and suggests optimal automation workflows",
-      "icon": "https://your-app-domain.com/assets/analysis-icon.png"
+      "icon": "https://aiworkflowbuilder-production.up.railway.app/assets/analysis-icon.png"
     },
     {
       "type": "AppFeature",
       "name": "Natural Language Processing",
       "description": "Describe automations in plain English and watch them come to life",
-      "icon": "https://your-app-domain.com/assets/nlp-icon.png"
+      "icon": "https://aiworkflowbuilder-production.up.railway.app/assets/nlp-icon.png"
     }
   ],
   "recipes": [
@@ -76,12 +77,12 @@
       "action": {
         "type": "remote_action",
         "name": "Build AI Automation",
-        "url": "https://your-app-domain.com/monday/execute_action",
+        "url": "https://aiworkflowbuilder-production.up.railway.app/monday/execute_action",
         "input_fields": [
           {
             "id": "user_input",
             "title": "Describe your automation",
-            "description": "Tell Claude what automation you want to create in plain English",
+            "description": "Tell AI what automation you want to create in plain English",
             "type": "long_text",
             "required": true,
             "placeholder": "Example: When a task is marked as complete, notify the team and create a follow-up task"
@@ -100,7 +101,7 @@
             "type": "dropdown",
             "required": false,
             "remote_options": {
-              "url": "https://your-app-domain.com/monday/get_remote_list_options"
+              "url": "https://aiworkflowbuilder-production.up.railway.app/monday/get_remote_list_options"
             }
           }
         ]
@@ -108,7 +109,7 @@
     },
     {
       "name": "Smart Task Analysis",
-      "description": "Analyze tasks and items using Claude AI for insights and recommendations",
+      "description": "Analyze tasks and items using AI for insights and recommendations",
       "trigger": {
         "type": "incoming_notification",
         "name": "When analysis is requested"
@@ -116,12 +117,12 @@
       "action": {
         "type": "remote_action",
         "name": "Analyze with AI",
-        "url": "https://your-app-domain.com/monday/execute_action",
+        "url": "https://aiworkflowbuilder-production.up.railway.app/monday/execute_action",
         "input_fields": [
           {
             "id": "analysis_prompt",
             "title": "Analysis Request",
-            "description": "What would you like Claude to analyze about this item?",
+            "description": "What would you like AI to analyze about this item?",
             "type": "long_text",
             "required": true,
             "placeholder": "Example: Analyze the risk level of this project and suggest mitigation strategies"
@@ -129,7 +130,7 @@
           {
             "id": "include_context",
             "title": "Include Board Context",
-            "description": "Should Claude consider the entire board context in the analysis?",
+            "description": "Should AI consider the entire board context in the analysis?",
             "type": "checkbox",
             "required": false
           }
@@ -142,7 +143,7 @@
       "name": "AI Automation Dashboard",
       "description": "Monitor and manage your AI-created automations",
       "type": "board_view",
-      "url": "https://your-app-domain.com/widgets/dashboard",
+      "url": "https://aiworkflowbuilder-production.up.railway.app/widgets/dashboard",
       "settings": [
         {
           "id": "show_metrics",
@@ -156,15 +157,15 @@
   "webhooks": [
     {
       "event": "create_item",
-      "url": "https://your-app-domain.com/webhooks/monday"
+      "url": "https://aiworkflowbuilder-production.up.railway.app/webhooks/monday"
     },
     {
-      "event": "change_column_value", 
-      "url": "https://your-app-domain.com/webhooks/monday"
+      "event": "change_column_value",
+      "url": "https://aiworkflowbuilder-production.up.railway.app/webhooks/monday"
     },
     {
       "event": "create_update",
-      "url": "https://your-app-domain.com/webhooks/monday"
+      "url": "https://aiworkflowbuilder-production.up.railway.app/webhooks/monday"
     }
   ],
   "security": {
@@ -190,7 +191,7 @@
     "timeout": 30,
     "environment_variables": [
       "MONDAY_CLIENT_ID",
-      "MONDAY_CLIENT_SECRET", 
+      "MONDAY_CLIENT_SECRET",
       "MONDAY_SIGNING_SECRET",
       "ANTHROPIC_API_KEY",
       "JWT_SECRET",

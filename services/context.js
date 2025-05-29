@@ -515,6 +515,18 @@ class ContextService {
     minimal.permissions = fullContext.permissions;
     return minimal;
   }
+
+  /**
+   * Health check for context service (required by executeAction controller)
+   */
+  async isHealthy() {
+    try {
+      // Simple health check - verify cache is working and mondayClient exists
+      return this.cache instanceof Map && this.mondayClient;
+    } catch (error) {
+      return false;
+    }
+  }
 }
 
 module.exports = ContextService;

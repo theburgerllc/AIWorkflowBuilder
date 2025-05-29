@@ -23,15 +23,15 @@ class ClaudeService {
   async analyzeOperation(userInput, context) {
     try {
       const prompt = this._buildOperationPrompt(userInput, context);
-      
-      this.logger.info('Analyzing operation', { 
+
+      this.logger.info('Analyzing operation', {
         inputLength: userInput.length,
         contextKeys: Object.keys(context)
       });
 
       const response = await this._callClaude(prompt);
       const parsedResponse = this._parseResponse(response);
-      
+
       this.logger.info('Operation analyzed', {
         operation: parsedResponse.operation,
         confidence: parsedResponse.confidence
@@ -84,7 +84,7 @@ class ClaudeService {
    */
   _buildOperationPrompt(userInput, context) {
     const contextSummary = this._compressContext(context);
-    
+
     return `You are an expert Monday.com operations analyst. Your job is to interpret natural language requests and convert them into structured Monday.com API operations.
 
 CONTEXT INFORMATION:
@@ -94,7 +94,7 @@ USER REQUEST: "${userInput}"
 
 OPERATION TYPES SUPPORTED:
 1. ITEM_CREATE - Create new items/tasks
-2. ITEM_UPDATE - Update existing items 
+2. ITEM_UPDATE - Update existing items
 3. ITEM_DELETE - Delete items
 4. BOARD_CREATE - Create new boards
 5. BOARD_UPDATE - Update board settings
@@ -236,7 +236,7 @@ Generate suggestions in JSON format:`;
       }
 
       const parsed = JSON.parse(jsonMatch[0]);
-      
+
       // Validate required fields
       if (!parsed.operation || typeof parsed.confidence !== 'number') {
         throw new Error('Invalid response format from Claude');
@@ -247,11 +247,11 @@ Generate suggestions in JSON format:`;
 
       return parsed;
     } catch (error) {
-      this.logger.error('Failed to parse Claude response', { 
+      this.logger.error('Failed to parse Claude response', {
         error: error.message,
         response: response.substring(0, 500)
       });
-      
+
       // Return default low-confidence response
       return {
         operation: 'UNKNOWN',
@@ -289,7 +289,7 @@ Generate suggestions in JSON format:`;
     try {
       const jsonMatch = response.match(/\{[\s\S]*\}/);
       if (!jsonMatch) return [];
-      
+
       const parsed = JSON.parse(jsonMatch[0]);
       return parsed.suggestions || [];
     } catch (error) {
@@ -338,15 +338,58 @@ Generate suggestions in JSON format:`;
   }
 
   /**
-   * Health check for Claude service
+   * Process user request and return operations (required by executeAction controller)
+   * @param {string} userInput - Natural language request
+   * @param {Object} context - Monday.com context
+   * @returns {Promise<Object>} - Processing result with operations
    */
-  async healthCheck() {
+  async processUserRequest(userInput, context) {
+    try {
+      const analysis = await this.analyzeOperation(userInput, context);
+
+      // Convert single operation to operations array format expected by controller
+      const operations = [{
+        type: analysis.operation,
+        parameters: analysis.parameters || {},
+        confidence: analysis.confidence
+      }];
+
+      return {
+        success: true,
+        operations: operations,
+        confidence: analysis.confidence,
+        summary: `Processed request: ${userInput}`,
+        warnings: analysis.warnings || [],
+        missingInfo: analysis.missingInfo || []
+      };
+    } catch (error) {
+      this.logger.error('Failed to process user request', { error: error.message });
+      return {
+        success: false,
+        error: error.message,
+        operations: [],
+        confidence: 0
+      };
+    }
+  }
+
+  /**
+   * Check if service is healthy (required by executeAction controller)
+   */
+  async isHealthy() {
     try {
       const response = await this._callClaude('Respond with "OK" if you can process this message.');
       return response.includes('OK');
     } catch (error) {
       return false;
     }
+  }
+
+  /**
+   * Health check for Claude service
+   */
+  async healthCheck() {
+    return this.isHealthy();
   }
 }
 

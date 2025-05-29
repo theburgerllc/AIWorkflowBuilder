@@ -49,7 +49,7 @@ class HealthChecker {
 
         // Set appropriate HTTP status
         const httpStatus = results.status === 'healthy' ? 200 : 503;
-        
+
         res.status(httpStatus).json(results);
     }
 
@@ -62,7 +62,7 @@ class HealthChecker {
         // Simple connection test
         const startTime = Date.now();
         // Add your database ping logic here
-        
+
         return {
             connected: true,
             responseTime: Date.now() - startTime
@@ -77,8 +77,9 @@ class HealthChecker {
                 { query: '{ me { id } }' },
                 {
                     headers: {
-                        'Authorization': `Bearer ${process.env.MONDAY_API_TOKEN}`,
-                        'Content-Type': 'application/json'
+                        'Authorization': `Bearer ${process.env.MONDAY_CLIENT_SECRET}`,
+                        'Content-Type': 'application/json',
+                        'API-Version': '2024-01'
                     },
                     timeout: 5000
                 }
@@ -106,7 +107,7 @@ class HealthChecker {
                 },
                 {
                     headers: {
-                        'x-api-key': process.env.CLAUDE_API_KEY,
+                        'x-api-key': process.env.ANTHROPIC_API_KEY,
                         'Content-Type': 'application/json',
                         'anthropic-version': '2023-06-01'
                     },
@@ -129,9 +130,9 @@ class HealthChecker {
         const memUsage = process.memoryUsage();
         const totalMem = require('os').totalmem();
         const freeMem = require('os').freemem();
-        
+
         const memoryPercentage = ((memUsage.rss / totalMem) * 100).toFixed(2);
-        
+
         if (memoryPercentage > 90) {
             throw new Error(`High memory usage: ${memoryPercentage}%`);
         }
@@ -155,7 +156,7 @@ class HealthChecker {
     async checkDiskSpace() {
         const fs = require('fs');
         const stats = fs.statSync('.');
-        
+
         return {
             message: 'Disk space check passed',
             writable: true
@@ -165,7 +166,7 @@ class HealthChecker {
     // Ready check (lighter version for Kubernetes)
     async performReadyCheck(req, res) {
         const criticalChecks = ['mondayApi', 'claudeApi'];
-        
+
         for (const checkName of criticalChecks) {
             try {
                 await this.checks[checkName]();
@@ -200,10 +201,10 @@ function setupHealthChecks(app) {
 
     // Comprehensive health check
     app.get('/health', healthChecker.performHealthCheck.bind(healthChecker));
-    
+
     // Kubernetes readiness probe
     app.get('/ready', healthChecker.performReadyCheck.bind(healthChecker));
-    
+
     // Kubernetes liveness probe
     app.get('/live', healthChecker.performLiveCheck.bind(healthChecker));
 

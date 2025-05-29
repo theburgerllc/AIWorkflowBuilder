@@ -4,13 +4,23 @@ const AI_CONFIG = require('../config/ai');
 
 class AIMiddleware {
   constructor() {
-    this.logger = new Logger('ai-middleware');
+    this.logger = require('../utils/logger');
     this.requestCounts = new Map();
     this.resetCountsInterval = 60000; // Reset every minute
     this.circuitBreaker = new CircuitBreaker();
 
-    // Start rate limit reset timer
-    setInterval(() => this._resetRateLimits(), this.resetCountsInterval);
+    // Store timer reference for cleanup
+    this.resetTimer = setInterval(() => this._resetRateLimits(), this.resetCountsInterval);
+  }
+
+  /**
+   * Cleanup method to clear timers and prevent open handles
+   */
+  cleanup() {
+    if (this.resetTimer) {
+      clearInterval(this.resetTimer);
+      this.resetTimer = null;
+    }
   }
 
   /**
@@ -418,7 +428,7 @@ class CircuitBreaker {
     this.failures = 0;
     this.state = 'CLOSED'; // CLOSED, OPEN, HALF_OPEN
     this.nextAttempt = 0;
-    this.logger = new Logger('circuit-breaker');
+    this.logger = require('../utils/logger');
   }
 
   isOpen() {
@@ -467,4 +477,6 @@ class CircuitBreaker {
   }
 }
 
-module.exports = AIMiddleware;
+// Export singleton instance for consistent cleanup
+const aiMiddleware = new AIMiddleware();
+module.exports = aiMiddleware;

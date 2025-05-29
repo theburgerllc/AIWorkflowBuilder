@@ -1,5 +1,5 @@
 // services/error-recovery.js
-import { logError, logOperation } from '../utils/logger.js';
+const logger = require('../utils/logger');
 
 class ErrorRecoveryService {
   constructor() {
@@ -118,10 +118,10 @@ class ErrorRecoveryService {
 
       // Attempt recovery
       const recoveryResult = await strategy.strategy(error, context);
-      
+
       if (recoveryResult.retry) {
         // Log recovery attempt
-        logOperation('errorRecovery', {
+        logger.info('Error recovery successful', {
           errorType,
           operation: context.operation.type,
           success: true
@@ -141,7 +141,10 @@ class ErrorRecoveryService {
       };
 
     } catch (recoveryError) {
-      logError('attemptRecovery', recoveryError, { originalError: error });
+      logger.error('Error recovery failed', {
+        recoveryError: recoveryError.message,
+        originalError: error.message
+      });
       return {
         successful: false,
         canRecover: false,
@@ -156,43 +159,43 @@ class ErrorRecoveryService {
    */
   classifyError(error) {
     const errorMessage = error.message || '';
-    
+
     // Rate limit errors
-    if (errorMessage.includes('rate limit') || 
+    if (errorMessage.includes('rate limit') ||
         errorMessage.includes('too many requests') ||
         error.status === 429) {
       return 'RATE_LIMIT_EXCEEDED';
     }
 
     // Network errors
-    if (errorMessage.includes('network') || 
+    if (errorMessage.includes('network') ||
         errorMessage.includes('timeout') ||
         error.code === 'ECONNREFUSED') {
       return 'NETWORK_ERROR';
     }
 
     // Permission errors
-    if (errorMessage.includes('permission') || 
+    if (errorMessage.includes('permission') ||
         errorMessage.includes('unauthorized') ||
         error.status === 403) {
       return 'PERMISSION_DENIED';
     }
 
     // Invalid data
-    if (errorMessage.includes('invalid') || 
+    if (errorMessage.includes('invalid') ||
         errorMessage.includes('validation') ||
         error.status === 400) {
       return 'INVALID_DATA';
     }
 
     // Not found
-    if (errorMessage.includes('not found') || 
+    if (errorMessage.includes('not found') ||
         error.status === 404) {
       return 'ITEM_NOT_FOUND';
     }
 
     // Duplicate
-    if (errorMessage.includes('duplicate') || 
+    if (errorMessage.includes('duplicate') ||
         errorMessage.includes('already exists')) {
       return 'DUPLICATE_ITEM';
     }
@@ -259,7 +262,7 @@ class ErrorRecoveryService {
       for (const [key, value] of Object.entries(operation.parameters.columnValues)) {
         // Determine column type from error message or key
         let fixedValue = value;
-        
+
         if (key.includes('date')) {
           fixedValue = fixes.dateFormat(value);
         } else if (key.includes('number') || key.includes('count')) {
@@ -293,7 +296,7 @@ class ErrorRecoveryService {
    */
   async findAlternatives(context) {
     const alternatives = [];
-    
+
     // Suggest similar items
     if (context.operation.parameters.itemId) {
       alternatives.push({
@@ -304,7 +307,7 @@ class ErrorRecoveryService {
     }
 
     // Suggest creating new item
-    if (context.operation.type.includes('update') || 
+    if (context.operation.type.includes('update') ||
         context.operation.type.includes('move')) {
       alternatives.push({
         type: 'create',
@@ -389,7 +392,7 @@ class ErrorRecoveryService {
       'invalid board',
       'invalid column'
     ];
-    
+
     const lowerError = errorMessage.toLowerCase();
     return !nonRetryableErrors.some(e => lowerError.includes(e));
   }
@@ -427,4 +430,4 @@ class ErrorRecoveryService {
   }
 }
 
-export default new ErrorRecoveryService();
+module.exports = new ErrorRecoveryService();

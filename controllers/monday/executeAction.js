@@ -1,10 +1,11 @@
 // controllers/monday/executeAction.js
 const crypto = require('crypto');
-const { logger } = require('../../utils/logger');
+const logger = require('../../utils/logger');
 const ClaudeService = require('../../services/claude');
 const OperationExecutor = require('../../services/operation-executor');
 const ValidationService = require('../../services/validation');
 const ContextService = require('../../services/context');
+const ErrorRecoveryService = require('../../services/error-recovery');
 
 class ExecuteActionController {
   constructor() {
@@ -12,6 +13,7 @@ class ExecuteActionController {
     this.operationExecutor = new OperationExecutor();
     this.validationService = new ValidationService();
     this.contextService = new ContextService();
+    this.errorRecoveryService = ErrorRecoveryService;
   }
 
   /**
@@ -21,7 +23,7 @@ class ExecuteActionController {
     try {
       const signature = req.get('authorization');
       const body = JSON.stringify(req.body);
-      
+
       if (!signature) {
         logger.warn('Missing Monday.com signature');
         return res.status(401).json({ error: 'Missing signature' });
@@ -29,7 +31,7 @@ class ExecuteActionController {
 
       // Monday.com sends signature as "Bearer <signature>"
       const receivedSignature = signature.replace('Bearer ', '');
-      
+
       // Calculate expected signature
       const expectedSignature = crypto
         .createHmac('sha256', process.env.MONDAY_SIGNING_SECRET)
@@ -57,10 +59,10 @@ class ExecuteActionController {
    */
   async executeAction(req, res) {
     const startTime = Date.now();
-    
+
     try {
       const { payload } = req.body;
-      
+
       if (!payload) {
         return res.status(400).json({
           error: 'Missing payload',
@@ -110,7 +112,7 @@ class ExecuteActionController {
 
       // Process user input with Claude AI
       const aiResponse = await this.claudeService.processUserRequest(userInput, context);
-      
+
       if (!aiResponse.success) {
         return res.status(400).json({
           error: 'AI processing failed',
@@ -133,31 +135,71 @@ class ExecuteActionController {
         });
       }
 
-      // Execute the operations
+      // Execute the operations with error recovery
       const executionResults = [];
       for (const operation of aiResponse.operations) {
-        try {
-          const result = await this.operationExecutor.execute(operation, {
-            ...context,
-            accessToken: req.mondayAccessToken || context.accessToken
-          });
-          
-          executionResults.push({
-            operation: operation.type,
-            success: true,
-            result: result
-          });
-        } catch (operationError) {
-          logger.error('Operation execution failed', {
-            operation: operation.type,
-            error: operationError.message
-          });
-          
-          executionResults.push({
-            operation: operation.type,
-            success: false,
-            error: operationError.message
-          });
+        let attempt = 1;
+        const maxAttempts = 3;
+        let lastError = null;
+
+        while (attempt <= maxAttempts) {
+          try {
+            const result = await this.operationExecutor.execute(operation, {
+              ...context,
+              accessToken: req.mondayAccessToken || context.accessToken,
+              attempt
+            });
+
+            executionResults.push({
+              operation: operation.type,
+              success: true,
+              result: result,
+              attempts: attempt
+            });
+            break; // Success, exit retry loop
+
+          } catch (operationError) {
+            lastError = operationError;
+
+            // Attempt error recovery
+            const recoveryResult = await this.errorRecoveryService.attemptRecovery(
+              operationError,
+              { operation, attempt, ...context }
+            );
+
+            if (recoveryResult.successful && recoveryResult.shouldRetry && attempt < maxAttempts) {
+              logger.info('Retrying operation after recovery', {
+                operation: operation.type,
+                attempt: attempt + 1,
+                recoveryStrategy: recoveryResult.strategy
+              });
+              attempt++;
+
+              // Apply any data fixes from recovery
+              if (recoveryResult.newData) {
+                operation.parameters = recoveryResult.newData;
+              }
+
+              continue; // Retry the operation
+            } else {
+              // Recovery failed or not possible
+              logger.error('Operation execution failed after recovery attempts', {
+                operation: operation.type,
+                error: operationError.message,
+                attempts: attempt,
+                recoveryAttempted: recoveryResult.attempted || false
+              });
+
+              executionResults.push({
+                operation: operation.type,
+                success: false,
+                error: operationError.message,
+                attempts: attempt,
+                recovery: recoveryResult
+              });
+              break; // Exit retry loop
+            }
+          }
         }
       }
 
@@ -185,7 +227,7 @@ class ExecuteActionController {
 
     } catch (error) {
       const executionTime = Date.now() - startTime;
-      
+
       logger.error('Monday.com action execution failed', {
         error: error.message,
         stack: error.stack,
@@ -256,7 +298,7 @@ class ExecuteActionController {
       };
 
       const isHealthy = Object.values(health.services).every(service => service === true);
-      
+
       res.status(isHealthy ? 200 : 503).json(health);
     } catch (error) {
       logger.error('Health check failed', { error: error.message });

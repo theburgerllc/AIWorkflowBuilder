@@ -1,10 +1,7 @@
 // nlp/prompt-templates/index.js
-const BoardOperations = require('./board-operations');
-const ItemOperations = require('./item-operations');
-const ColumnOperations = require('./column-operations');
-const AutomationOperations = require('./automation-operations');
-const UserOperations = require('./user-operations');
-const BulkOperations = require('./bulk-operations');
+
+// Forward declarations - will be defined below
+let BoardOperations, ItemOperations;
 
 class PromptTemplateManager {
   constructor() {
@@ -12,20 +9,12 @@ class PromptTemplateManager {
       BOARD_CREATE: BoardOperations.createBoard,
       BOARD_UPDATE: BoardOperations.updateBoard,
       BOARD_DELETE: BoardOperations.deleteBoard,
-      
+
       ITEM_CREATE: ItemOperations.createItem,
       ITEM_UPDATE: ItemOperations.updateItem,
       ITEM_DELETE: ItemOperations.deleteItem,
-      
-      COLUMN_CREATE: ColumnOperations.createColumn,
-      COLUMN_UPDATE: ColumnOperations.updateColumn,
-      COLUMN_DELETE: ColumnOperations.deleteColumn,
-      
-      STATUS_UPDATE: ItemOperations.updateStatus,
-      USER_ASSIGN: UserOperations.assignUser,
-      
-      AUTOMATION_CREATE: AutomationOperations.createAutomation,
-      BULK_OPERATION: BulkOperations.bulkOperation
+
+      STATUS_UPDATE: ItemOperations.updateStatus
     };
   }
 
@@ -34,7 +23,7 @@ class PromptTemplateManager {
     if (!template) {
       throw new Error(`No prompt template found for operation: ${operationType}`);
     }
-    
+
     return template(userInput, context);
   }
 
@@ -43,10 +32,8 @@ class PromptTemplateManager {
   }
 }
 
-module.exports = PromptTemplateManager;
-
 // nlp/prompt-templates/board-operations.js
-const BoardOperations = {
+BoardOperations = {
   createBoard: (userInput, context) => `
 You are analyzing a Monday.com board creation request.
 
@@ -182,7 +169,7 @@ Analyze and respond with JSON only:`
 };
 
 // nlp/prompt-templates/item-operations.js
-const ItemOperations = {
+ItemOperations = {
   createItem: (userInput, context) => `
 You are analyzing a Monday.com item creation request.
 
